@@ -5,9 +5,9 @@ OBJS = networking.o multicast.o
 OBJ_DIR = obj
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(OBJS))
 
-all: directories run
+all: directories chat
 
-run: $(OBJ)
+chat: $(OBJ)
 	$(compiler) $^ -o $@
 
 $(OBJ_DIR)/%.o : %.c networking.h
@@ -17,5 +17,5 @@ directories:
 	@mkdir -p $(OBJ_DIR)
 
 clean:
-	rm -rf run $(OBJ_DIR)/*.o
+	rm -rf chat $(OBJ_DIR)/*.o
 
