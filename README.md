@@ -9,4 +9,4 @@ ECE 428 Distributed Systems MP2 - Multicasting
 
 To Do
 ======
--Everything
+- Everything
