@@ -26,7 +26,7 @@ int udp_send(int sockfd, char * message, struct addrinfo * p){
     return max_buf_len; //num_bytes;
 }
 
-int set_up_talk(int port_num, struct addrinfo **p){
+int set_up_talk(char *address, int port_num, struct addrinfo **p){
     int sockfd;
     struct addrinfo hints, *servinfo;
     int rv;
@@ -38,7 +38,7 @@ int set_up_talk(int port_num, struct addrinfo **p){
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if((rv = getaddrinfo(localhost, port, &hints, &servinfo)) != 0){
+    if((rv = getaddrinfo(address, port, &hints, &servinfo)) != 0){
         printf("setUpTalk getaddrinfo error: %s\n", gai_strerror(rv));
         return -1;
     }
@@ -55,7 +55,9 @@ int set_up_talk(int port_num, struct addrinfo **p){
         return -1;
     }
 
-    freeaddrinfo(servinfo);
+    //freeaddrinfo(servinfo);
+    //Change : freeaddrinfo(p) needs to be called outside this function before closing sockfd
+    
     return sockfd;
 }
 
