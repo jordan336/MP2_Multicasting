@@ -1,19 +1,5 @@
-/********************************
-* Multicast.c 					*
-*********************************
-* Mark Kennedy: kenned31		*
-* Jordan Ebel : ebel1			*
-*********************************
-* Description					*
-*								*
-* ..............				*
-********************************/
+//Multicast.c
+//Reliable unicast, basic multicast, reliable multicast
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "networking.h"
+#include "multicast.h"
 
-
-int main (int argc, const char* argv[]){
-    return 0;
-}
