@@ -13,7 +13,7 @@ To Do
 
 Change Log
 ==========
-- Do we want to keep a change log?
 
 - 3/11 - Initial set up.  Old networking code + Makefile included
+- 3/13 - Updated networking to fix freeaddrinfo() bug as well as add support beyond localhost 
 
