@@ -8,7 +8,7 @@
 #define MAX_BUF_LEN 1000
 #define PORT 15457
 
-int ID;
+int ID, num_processes;
 pthread_t read_thread, write_thread;
 
 void * write_messages();

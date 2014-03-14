@@ -3,23 +3,25 @@
 
 #include "threads.h"
 
-//remove this when doing full multicasting
-#define num_processes 2
-
 void * write_messages(){
     int i;
     char message[MAX_BUF_LEN];
+    char prefix[4];  //3 + null
     struct addrinfo *p;
     
+    printf("Enter your messages followed by return, quit to exit.\n");
+    
     while(1){    
-        printf("Enter your message: ");
-        scanf("%s", message);
+        fgets(message+3, MAX_BUF_LEN-3, stdin);
+        if(strlen(message+3)>0 && message[strlen(message+3)-1+3] == '\n') message[strlen(message+3)-1+3]='\0';
 
-        if(strcmp(message, "quit") == 0){
+        if(strcmp(message+3, "quit") == 0){
             pthread_cancel(read_thread);
-            close(listenfd);  //since read thread wont
             return 0;
         }
+
+        sprintf(prefix, "%d> ", ID);
+        strncpy(message, prefix, 3);
 
         for(i=0; i<num_processes; i++){
             if(i == ID) continue;
@@ -44,11 +46,10 @@ void * read_messages(void * listen){
     while(1){
         int num_bytes = udp_listen(listenfd, buf);
         if(num_bytes > 0){
-            printf("Received: %s\n", buf);
+            printf("%s\n", buf);
         }
     }
 
-    close(listenfd);
     //free(buf);  //---TO DO: find out why the fuck this segfaults  -edit: i think you cant free from pthread
     return 0;    
 }
