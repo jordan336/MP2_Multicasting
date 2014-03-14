@@ -22,11 +22,11 @@
 int delay_time, drop_rate, listenfd;
 char * addresses;
 
-void pthread_setup(){
-	if (pthread_create(&read_thread, NULL, &read_messages, &listenfd)){
+void pthread_setup(struct read_info * r_i, char * addrs){
+	if (pthread_create(&read_thread, NULL, &read_messages, r_i)){
 		printf("%d> Read Thread error\n", ID);
 	}
-	if (pthread_create(&write_thread, NULL, &write_messages, NULL)){
+	if (pthread_create(&write_thread, NULL, &write_messages, addrs)){
 		printf("%d> Write Thread error\n", ID);
 	}
 	pthread_join(read_thread, NULL);
@@ -41,6 +41,14 @@ void print_status(){
         printf("%s ", addresses+(i*16));
     }
     printf("\n---------------------------------\n");
+}
+
+struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd){
+    struct read_info * r_i = (struct read_info *)malloc(sizeof(struct read_info));
+    r_i -> delay_time = delay_time;
+    r_i -> drop_rate  = drop_rate;
+    r_i -> listenfd   = listenfd;
+    return r_i;
 }
 
 int main (int argc, const char* argv[]){
@@ -61,8 +69,11 @@ int main (int argc, const char* argv[]){
     if(VERBOSE) print_status();
 
     listenfd = set_up_listen(PORT+ID);
-    pthread_setup();
+    struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd);
+    pthread_setup(r_i, addresses);
     close(listenfd);
+    free(r_i);
+    free(addresses);
     return 0;
 }
 

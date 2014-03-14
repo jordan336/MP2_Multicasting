@@ -3,12 +3,13 @@
 
 #include "threads.h"
 
-void * write_messages(){
+void * write_messages(void * param){
     int i;
     char message[MAX_BUF_LEN];
     char prefix[4];  //3 + null
     struct addrinfo *p;
-    
+    char * addresses = (char *)param;
+
     printf("Enter your messages followed by return, quit to exit.\n");
     
     while(1){    
@@ -25,13 +26,13 @@ void * write_messages(){
 
         for(i=0; i<num_processes; i++){
             if(i == ID) continue;
-            int talkfd = set_up_talk(localhost, PORT+i, &p);
+            int talkfd = set_up_talk(addresses+(i*16), PORT+i, &p);
             if(talkfd != -1){
                 udp_send(talkfd, message, p);
                 close(talkfd);
             }
             else{
-                printf("Write thread: bad talkfd\n");
+                printf("Write thread: bad talkfd with ip: %s\n", addresses+(i*16));
             }
         }
     }
@@ -39,8 +40,11 @@ void * write_messages(){
     return 0;
 }
 
-void * read_messages(void * listen){
-    int listenfd = *((int *)listen);
+void * read_messages(void * param){
+    struct read_info r_i = *((struct read_info *) param); 
+    int listenfd = r_i.listenfd;
+    //int delay_time = r_i.delay_time;
+    //int drop_rate = r_i.drop_rate;
     char * buf = (char *)malloc(MAX_BUF_LEN * sizeof(char));
 
     while(1){
@@ -51,6 +55,6 @@ void * read_messages(void * listen){
     }
 
     //free(buf);  //---TO DO: find out why the fuck this segfaults  -edit: i think you cant free from pthread
-    return 0;    
+    return 0;
 }
 

@@ -20,7 +20,6 @@ format:
 
 To Do
 ======
-- Passing parsed ip_addresses all the way down to udp_send stuff
 - Reliable unicast
 - Basic multicast
 - Reliable multicast
@@ -35,4 +34,5 @@ Change Log
 - 3/13 - Support for talking between multiple processes.  Currently hardcoded to 2 processes and 2 messages. Run with ids 0 and 1.
 - 3/13 - Improved formatting for reading / writing.  Processes continue indefinitely until quit is typed.
 - 3/13 - Parsing of config file.  Variable number of processes. Need to finish this by making use of IP addresses in udp_send().
+- 3/14 - Correctly using IP addresses to send.
 
