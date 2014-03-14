@@ -20,9 +20,9 @@
 
 //char * config_file;
 int delay_time, drop_rate, listenfd;
-pthread_t read_thread, write_thread;
 
 void pthread_setup(){
+    void * write_ret_value = 0;
 	if (pthread_create(&read_thread, NULL, &read_messages, &listenfd)){
 		printf("%d> Read Thread error\n", ID);
 	}
@@ -30,7 +30,7 @@ void pthread_setup(){
 		printf("%d> Write Thread error\n", ID);
 	}
 	pthread_join(read_thread, NULL);
-	pthread_join(write_thread, NULL);
+	pthread_join(write_thread, write_ret_value);
 }
 
 int main (int argc, const char* argv[]){
@@ -48,7 +48,6 @@ int main (int argc, const char* argv[]){
 
     listenfd = set_up_listen(PORT+ID);
     pthread_setup();
-    close(listenfd);
     return 0;
 }
 

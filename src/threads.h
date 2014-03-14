@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "networking.h"
+#include <pthread.h>
 
 #define MAX_BUF_LEN 1000
 #define PORT 15457
 
 int ID;
+pthread_t read_thread, write_thread;
 
 void * write_messages();
 void * read_messages(void * listen);

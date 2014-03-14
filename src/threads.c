@@ -8,14 +8,18 @@
 
 void * write_messages(){
     int i;
-    int num_messages = 0;
     char message[MAX_BUF_LEN];
     struct addrinfo *p;
     
-    while(num_messages < 2){    
+    while(1){    
         printf("Enter your message: ");
         scanf("%s", message);
-        num_messages++;
+
+        if(strcmp(message, "quit") == 0){
+            pthread_cancel(read_thread);
+            close(listenfd);  //since read thread wont
+            return 0;
+        }
 
         for(i=0; i<num_processes; i++){
             if(i == ID) continue;
@@ -35,19 +39,17 @@ void * write_messages(){
 
 void * read_messages(void * listen){
     int listenfd = *((int *)listen);
-    int num_messages = 0;
     char * buf = (char *)malloc(MAX_BUF_LEN * sizeof(char));
 
-    while(num_messages < 2){
+    while(1){
         int num_bytes = udp_listen(listenfd, buf);
         if(num_bytes > 0){
-            num_messages++;
             printf("Received: %s\n", buf);
         }
     }
 
     close(listenfd);
-    //free(buf);  //---TO DO: find out the fuck this segfaults
+    //free(buf);  //---TO DO: find out why the fuck this segfaults  -edit: i think you cant free from pthread
     return 0;    
 }
 
