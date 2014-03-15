@@ -3,13 +3,9 @@
 
 #include "threads.h"
 
-void * write_messages(void * param){
-    int i;
+void * write_messages(){
     char message[MAX_BUF_LEN];
-    char prefix[4];  //3 + null
-    struct addrinfo *p;
-    char * addresses = (char *)param;
-
+    
     printf("Enter your messages followed by return, quit to exit.\n");
     
     while(1){    
@@ -20,35 +16,18 @@ void * write_messages(void * param){
             pthread_cancel(read_thread);
             return 0;
         }
-
-        sprintf(prefix, "%d> ", ID);
-        strncpy(message, prefix, 3);
-
-        for(i=0; i<num_processes; i++){
-            if(i == ID) continue;
-            int talkfd = set_up_talk(addresses+(i*16), PORT+i, &p);
-            if(talkfd != -1){
-                udp_send(talkfd, message, p);
-                close(talkfd);
-            }
-            else{
-                printf("Write thread: bad talkfd with ip: %s\n", addresses+(i*16));
-            }
-        }
+    
+        r_multicast(message);
     }
 
     return 0;
 }
 
-void * read_messages(void * param){
-    struct read_info r_i = *((struct read_info *) param); 
-    int listenfd = r_i.listenfd;
-    //int delay_time = r_i.delay_time;
-    //int drop_rate = r_i.drop_rate;
+void * read_messages(){
     char * buf = (char *)malloc(MAX_BUF_LEN * sizeof(char));
 
     while(1){
-        int num_bytes = udp_listen(listenfd, buf);
+        int num_bytes = r_deliver(buf); 
         if(num_bytes > 0){
             printf("%s\n", buf);
         }

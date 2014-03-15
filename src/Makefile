@@ -10,7 +10,7 @@ all: directories chat
 chat: $(OBJ)
 	$(compiler) $^ -o $@ -pthread
 
-$(OBJ_DIR)/%.o : %.c networking.h multicast.h threads.h file_io.h
+$(OBJ_DIR)/%.o : %.c networking.h multicast.h threads.h file_io.h types.h
 	$(compiler) $(flags) -c $< -o $@
 
 directories:

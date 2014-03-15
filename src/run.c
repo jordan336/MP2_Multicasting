@@ -13,27 +13,25 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "networking.h"
-#include "multicast.h"
 #include "threads.h"
 #include "file_io.h"
 
 #define VERBOSE 1
 
-int delay_time, drop_rate, listenfd;
-char * addresses;
 
-void pthread_setup(struct read_info * r_i, char * addrs){
-	if (pthread_create(&read_thread, NULL, &read_messages, r_i)){
-		printf("%d> Read Thread error\n", ID);
+void pthread_setup(struct read_info * r_i, char * addrs, int id, int num_processes){
+    init_multicast(addrs, r_i, id, num_processes);
+	if (pthread_create(&read_thread, NULL, &read_messages, NULL)){
+		printf("%d> Read Thread error\n", id);
 	}
-	if (pthread_create(&write_thread, NULL, &write_messages, addrs)){
-		printf("%d> Write Thread error\n", ID);
+	if (pthread_create(&write_thread, NULL, &write_messages, NULL)){
+		printf("%d> Write Thread error\n", id);
 	}
 	pthread_join(read_thread, NULL);
 	pthread_join(write_thread, NULL);
 }
 
-void print_status(){
+void print_status(char * addresses, int num_processes){
     printf("Num processes: %d\n", num_processes);
     printf("IP Addresses : ");
     int i = 0;
@@ -51,7 +49,18 @@ struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd)
     return r_i;
 }
 
+int teardown(struct read_info * r_i, char * addresses, int listenfd){
+    close(listenfd);
+    free(r_i);
+    free(addresses);
+    close_multicast();
+    return 1;
+}
+
 int main (int argc, const char* argv[]){
+ 
+    int listenfd, delay_time, drop_rate, id, num_processes;
+    char * addresses;
     
     if(argc != 5){
         printf("chat usage: config_file delay_time drop_rate id\n");
@@ -61,19 +70,17 @@ int main (int argc, const char* argv[]){
         addresses  = parse_config(argv[1], &num_processes);
         delay_time = atoi(argv[2]);
         drop_rate  = atoi(argv[3]);
-        ID         = atoi(argv[4]);
+        id         = atoi(argv[4]);
     }
 
     if(addresses == NULL) return -1;  //failed to read config file
 
-    if(VERBOSE) print_status();
+    if(VERBOSE) print_status(addresses, num_processes);
 
-    listenfd = set_up_listen(PORT+ID);
+    listenfd = set_up_listen(PORT+id);
     struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd);
-    pthread_setup(r_i, addresses);
-    close(listenfd);
-    free(r_i);
-    free(addresses);
+    pthread_setup(r_i, addresses, id, num_processes);
+    teardown(r_i, addresses, listenfd); 
     return 0;
 }
 

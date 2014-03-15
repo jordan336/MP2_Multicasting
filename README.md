@@ -20,9 +20,10 @@ format:
 
 To Do
 ======
-- Reliable unicast
-- Basic multicast
-- Reliable multicast
+- Fix reliable multicast bug
+- Reliable unicate, need to add ACKs
+- Reliable causal ordering
+- Reliable total ordering
 - Simulated delay
 - Simulated loss
 
@@ -35,4 +36,7 @@ Change Log
 - 3/13 - Improved formatting for reading / writing.  Processes continue indefinitely until quit is typed.
 - 3/13 - Parsing of config file.  Variable number of processes. Need to finish this by making use of IP addresses in udp_send().
 - 3/14 - Correctly using IP addresses to send.
+- 3/14 - Unicast working, not reliable.  Need to add ACKs to support reliable unicast
+- 3/14 - Reliable multicast close.  Bug wont allow read thread to broadcast
+
 
