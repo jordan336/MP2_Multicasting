@@ -41,16 +41,18 @@ void print_status(char * addresses, int num_processes){
     printf("\n---------------------------------\n");
 }
 
-struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd){
+struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd, int ackfd){
     struct read_info * r_i = (struct read_info *)malloc(sizeof(struct read_info));
     r_i -> delay_time = delay_time;
     r_i -> drop_rate  = drop_rate;
     r_i -> listenfd   = listenfd;
+    r_i -> ackfd      = ackfd;
     return r_i;
 }
 
-int teardown(struct read_info * r_i, char * addresses, int listenfd){
+int teardown(struct read_info * r_i, char * addresses, int listenfd, int ackfd){
     close(listenfd);
+    close(ackfd);
     free(r_i);
     free(addresses);
     close_multicast();
@@ -59,7 +61,7 @@ int teardown(struct read_info * r_i, char * addresses, int listenfd){
 
 int main (int argc, const char* argv[]){
  
-    int listenfd, delay_time, drop_rate, id, num_processes;
+    int ackfd, listenfd, delay_time, drop_rate, id, num_processes;
     char * addresses;
     
     if(argc != 5){
@@ -77,10 +79,11 @@ int main (int argc, const char* argv[]){
 
     if(VERBOSE) print_status(addresses, num_processes);
 
-    listenfd = set_up_listen(PORT+id);
-    struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd);
+    listenfd = set_up_listen(PORT+id, 0);
+    ackfd    = set_up_listen(ACK_PORT+id, 1);
+    struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd, ackfd);
     pthread_setup(r_i, addresses, id, num_processes);
-    teardown(r_i, addresses, listenfd); 
+    teardown(r_i, addresses, listenfd, ackfd); 
     return 0;
 }
 

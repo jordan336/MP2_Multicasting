@@ -8,8 +8,8 @@ int udp_listen(int sockfd, char * buf){
     int num_bytes;
 
     if((num_bytes = recvfrom(sockfd, buf, max_buf_len-1, 0, NULL, NULL)) == -1){
-        printf("listen failure\n");
-        perror("listen");
+        //printf("listen failure\n");
+        //perror("listen");
         return -1;
     }
     buf[max_buf_len-1] = '\0';
@@ -61,7 +61,7 @@ int set_up_talk(char *address, int port_num, struct addrinfo **p){
     return sockfd;
 }
 
-int set_up_listen(int port_num){
+int set_up_listen(int port_num, int nonblocking){
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -99,7 +99,7 @@ int set_up_listen(int port_num){
     }
 
     //freeaddrinfo(servinfo);
-    //fcntl(sockfd, F_SETFL, O_NONBLOCK);
+    if(nonblocking) fcntl(sockfd, F_SETFL, O_NONBLOCK);
     return sockfd;
 }
 

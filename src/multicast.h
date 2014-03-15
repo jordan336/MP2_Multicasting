@@ -7,6 +7,7 @@
 #include "types.h"
 
 #define PORT 15457
+#define ACK_PORT 25457
 #define STORAGE 40
 #define MAX_BUF_LEN 1000
 

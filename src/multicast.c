@@ -6,8 +6,12 @@
 char * addresses, * seen;
 struct read_info * r_i;
 int id, num_processes, num_seen;
-char prefix[4]; 
+char prefix[4];
 pthread_mutex_t seen_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_t broadcast_thread;
+
+//////////////////////////////////////////////////////////////////////////////////
+//Utilities
 
 void lock(){
     pthread_mutex_lock(&seen_mutex);
@@ -57,14 +61,59 @@ int add_to_seen(char * message){
     return 1;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+//ACKs
+
+int wait_for_ack(){
+    int count = 0;
+    char reply[MAX_BUF_LEN];
+
+    while(count++ < 10000000){
+        if(udp_listen(r_i->ackfd, reply) > 0){
+            if(strcmp(reply, "{}") == 0){
+                return 0;  //got ack
+            }
+        }
+    }
+    printf("timeout ");
+    return 1;  //resend
+}
+
+int send_ack(int dest_id){
+    struct addrinfo *p;
+    int talkfd = set_up_talk(addresses+(dest_id*16), ACK_PORT+dest_id, &p);
+        
+    //printf("send ack to: %d\n", dest_id);
+
+    if(talkfd != -1){
+        udp_send(talkfd, "{}", p);
+        freeaddrinfo(p);
+        close(talkfd);
+        return 1;
+    }
+    printf("Unable to send ACK to process: %d\n", dest_id);
+    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//Unicast
+
 int unicast_send(char * destination, int port, char * message){
+    char buf[MAX_BUF_LEN];
+    memcpy(buf, message, MAX_BUF_LEN);
+    strncpy(buf+MAX_BUF_LEN-2, prefix, 1);
     struct addrinfo *p;
     int talkfd = set_up_talk(destination, port, &p);
-    
+
+    printf("sending to: %d ....", port-PORT);
+
     if(talkfd != -1){
-        udp_send(talkfd, message, p);
-        //To Do: Implement reliable unicast by waiting here for an ACK or timeout and resending
-        //wait_for_ack();
+        do{
+            udp_send(talkfd, buf, p);
+        } while(wait_for_ack());
+        
+        printf(" received ack\n");
+
         freeaddrinfo(p);
         close(talkfd);
         return 1;
@@ -77,8 +126,20 @@ int unicast_send(char * destination, int port, char * message){
 
 int unicast_receive(char * message){
     //add delay / drop
-    return udp_listen(r_i->listenfd, message);
+    
+    int bytes = udp_listen(r_i->listenfd, message);
+    if(bytes > 0){
+        char source_num[2];
+        memcpy(source_num, message+(MAX_BUF_LEN-2), 1);  //grab sender's id
+        source_num[1] = '\0';
+        send_ack(atoi(source_num));
+    }
+    message[MAX_BUF_LEN - 2] = ' ';  //remove sender's id
+    return bytes;
 }
+
+//////////////////////////////////////////////////////////////////////////////////
+//Basic multicast
 
 int b_multicast(char * message){
     int i;
@@ -89,6 +150,25 @@ int b_multicast(char * message){
     return 1;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+//Broadcast thread 
+
+void * broadcast_message(void * param){
+    b_multicast((char *)param);
+    return 0;
+}
+
+int start_broadcast_thread(char * message){
+    if (pthread_create(&broadcast_thread, NULL, &broadcast_message, message)){
+		printf("%d> Broadcast Thread error\n", id);
+	}
+	//pthread_join(broadcast_thread, NULL);
+    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//Reliable multicast
+
 int r_multicast(char * message){
     strncpy(message, prefix, 3);
     add_to_seen(message);
@@ -98,16 +178,17 @@ int r_multicast(char * message){
 int r_deliver(char * message){
     int num_bytes = unicast_receive(message);
     if(num_bytes > 0 && !previously_seen(message)){
-        b_multicast(message);  //bug, wont work
+        //printf("broadcasting\n");
+        start_broadcast_thread(message);
         add_to_seen(message);
-        printf("previously unseen, broadcasting\n");
         return num_bytes;
     }
     else if(num_bytes > 0){
-        printf("previously seen\n");
+        //printf("previously seen\n");
     }
     return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
 
 
