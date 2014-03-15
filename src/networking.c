@@ -12,7 +12,7 @@ int udp_listen(int sockfd, char * buf){
         perror("listen");
         return -1;
     }
-    buf[max_buf_len] = '\0';
+    buf[max_buf_len-1] = '\0';
     return max_buf_len;  //num_bytes
 }
 
@@ -98,7 +98,7 @@ int set_up_listen(int port_num){
         return -1;
     }
 
-    freeaddrinfo(servinfo);
+    //freeaddrinfo(servinfo);
     //fcntl(sockfd, F_SETFL, O_NONBLOCK);
     return sockfd;
 }

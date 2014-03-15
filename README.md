@@ -20,7 +20,6 @@ format:
 
 To Do
 ======
-- Fix reliable multicast bug
 - Reliable unicate, need to add ACKs
 - Reliable causal ordering
 - Reliable total ordering
@@ -38,5 +37,5 @@ Change Log
 - 3/14 - Correctly using IP addresses to send.
 - 3/14 - Unicast working, not reliable.  Need to add ACKs to support reliable unicast
 - 3/14 - Reliable multicast close.  Bug wont allow read thread to broadcast
-
+- 3/15 - Reliable multicast seems to be fixed.  Check for strange / failed behavior on broadcast after receiving.
 

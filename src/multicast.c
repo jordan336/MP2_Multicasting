@@ -98,7 +98,7 @@ int r_multicast(char * message){
 int r_deliver(char * message){
     int num_bytes = unicast_receive(message);
     if(num_bytes > 0 && !previously_seen(message)){
-        //b_multicast(message);  //bug, wont work
+        b_multicast(message);  //bug, wont work
         add_to_seen(message);
         printf("previously unseen, broadcasting\n");
         return num_bytes;
