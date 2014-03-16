@@ -75,6 +75,18 @@ int main (int argc, const char* argv[]){
         id         = atoi(argv[4]);
     }
 
+    if(drop_rate < 0 || drop_rate > 100){
+        printf("Drop rate must be between 0 and 100\n"); 
+        return -1;
+    }
+
+    if(delay_time < 0){
+        printf("Delay time must be positive\n");
+        return -1;
+    }
+
+    srand(time(NULL));
+
     if(addresses == NULL) return -1;  //failed to read config file
 
     if(VERBOSE) print_status(addresses, num_processes);

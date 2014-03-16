@@ -76,6 +76,7 @@ int wait_for_ack(){
         }
     }
     printf("timeout ");
+    fflush(stdout);
     return 1;  //resend
 }
 
@@ -105,14 +106,15 @@ int unicast_send(char * destination, int port, char * message){
     struct addrinfo *p;
     int talkfd = set_up_talk(destination, port, &p);
 
-    printf("sending to: %d ....", port-PORT);
+    printf("sending to: %d .... ", port-PORT);
+    fflush(stdout);
 
     if(talkfd != -1){
         do{
             udp_send(talkfd, buf, p);
         } while(wait_for_ack());
         
-        printf(" received ack\n");
+        printf("received ack\n");
 
         freeaddrinfo(p);
         close(talkfd);
@@ -125,9 +127,20 @@ int unicast_send(char * destination, int port, char * message){
 }
 
 int unicast_receive(char * message){
-    //add delay / drop
-    
+    int random_drop  = rand() % 101;  //[0, 100]
+    int random_delay = rand() % (2 * r_i->delay_time);  //[0, 2*delay_time-1]
     int bytes = udp_listen(r_i->listenfd, message);
+  
+    //drop
+    if(random_drop <= r_i->drop_rate){
+        printf("dropping packet\n");
+        return 0;
+    }
+
+    //delay
+    printf("delaying: %d ms\n", random_delay);
+    usleep(random_delay*1000);
+
     if(bytes > 0){
         char source_num[2];
         memcpy(source_num, message+(MAX_BUF_LEN-2), 1);  //grab sender's id
