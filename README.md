@@ -28,8 +28,15 @@ To Do
 ======
 - Reliable causal ordering
 - Reliable total ordering
+- Decide if/how to fix known bugs
 - Decide if we need sequence numbers.  Need sequence numbers to support dropping ACKs and better time out handling
         -- Really sucks but we probably need sequence numbers
+
+Known bugs
+==========
+- If delay rates too high, timeout is too fast.  Without sequence numbers, everything gets messed up.
+- If same message typed twice, will only be sent once because it appears as an already seen message in reliable multicast.  Reliable multicast specifically looks for previously seen messages to terminate broadcasts.
+
 
 Change Log
 ==========
