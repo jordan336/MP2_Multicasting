@@ -9,7 +9,7 @@ void * write_messages(){
     printf("Enter your messages followed by return, quit to exit.\n");
     
     while(1){    
-        fgets(message+3, MAX_BUF_LEN-3, stdin);
+        fgets(message+3, MAX_BUF_LEN-3-HEADER_SIZE, stdin);
         if(strlen(message+3)>0 && message[strlen(message+3)-1+3] == '\n') message[strlen(message+3)-1+3]='\0';
 
         if(strcmp(message+3, "quit") == 0){

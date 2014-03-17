@@ -8,13 +8,11 @@ ECE 428 Distributed Systems MP2 - Multicasting
 
 Usage
 =====
-./chat config_file delay_time drop_rate id
-
-ids must be [0, num_processes-1]
-delay time in milliseconds, must be positive
-drop_rate must be [0, 100]
-
-must have all ids present in chatroom or infinite timeouts...
+- ./chat config_file delay_time drop_rate id
+- ids must be [0, num_processes-1]
+- delay time in milliseconds, must be positive
+- drop_rate must be [0, 100]
+- must have all ids present in chatroom or infinite timeouts...
 
 Config File
 ===========
@@ -26,11 +24,10 @@ format:
 
 To Do
 ======
+- Put in ACK drops and timeout handling with sequence numbers
+- Completely remove reliable multicast probably, its not unnecessary with full reliable unicast
 - Reliable causal ordering
 - Reliable total ordering
-- Decide if/how to fix known bugs
-- Decide if we need sequence numbers.  Need sequence numbers to support dropping ACKs and better time out handling
-        -- Really sucks but we probably need sequence numbers
 
 Known bugs
 ==========
@@ -52,4 +49,5 @@ Change Log
 - 3/15 - Reliable multicast seems to be fixed.  Check for strange / failed behavior on broadcast after receiving.
 - 3/15 - Reliable unicast with ACKs working.  Reliable multicast using ACKs working.
 - 3/16 - Random delay and drop working
+- 3/17 - Added sequence numbers for every message
 

@@ -9,6 +9,7 @@ int id, num_processes, num_seen;
 char prefix[4];
 pthread_mutex_t seen_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t broadcast_thread;
+int * seq_nums;
 
 //////////////////////////////////////////////////////////////////////////////////
 //Utilities
@@ -30,6 +31,9 @@ int init_multicast(char * new_addrs, struct read_info * new_r_i, int new_id, int
     sprintf(prefix, "%d> ", new_id);
     seen = (char *)malloc(STORAGE * MAX_BUF_LEN * sizeof(char));  //set up array of previously seen messages
     memset(seen, 0, STORAGE * MAX_BUF_LEN * sizeof(char));
+    seq_nums = (int *)malloc(num_processes * sizeof(int));
+    int i;
+    for(i=0; i<num_processes; i++) seq_nums[i] = 1;
     return 1;
 }
 
@@ -70,24 +74,28 @@ int wait_for_ack(){
 
     while(count++ < 10000000){
         if(udp_listen(r_i->ackfd, reply) > 0){
-            if(strcmp(reply, "{}") == 0){
-                return 0;  //got ack
-            }
+            int sender = *((int *)reply);
+            int seq_num = atoi(reply+HEADER_SIZE);
+            if(seq_num > seq_nums[sender]) seq_nums[sender] = seq_num;
+            return seq_num; //got ack
         }
     }
     printf("timeout ");
     fflush(stdout);
-    return 1;  //resend
+    return -1;  //resend
 }
 
-int send_ack(int dest_id){
+int send_ack(int dest_id, int seq_num){
     struct addrinfo *p;
     int talkfd = set_up_talk(addresses+(dest_id*16), ACK_PORT+dest_id, &p);
-        
+    char ack_message[4 + HEADER_SIZE];
+
     //printf("send ack to: %d\n", dest_id);
 
     if(talkfd != -1){
-        udp_send(talkfd, "{}", p);
+        *((int *)ack_message) = id;
+        sprintf(ack_message+HEADER_SIZE, "%d", seq_num);
+        udp_send(talkfd, ack_message, p);
         freeaddrinfo(p);
         close(talkfd);
         return 1;
@@ -101,10 +109,12 @@ int send_ack(int dest_id){
 
 int unicast_send(char * destination, int port, char * message){
     char buf[MAX_BUF_LEN];
-    memcpy(buf, message, MAX_BUF_LEN);
-    strncpy(buf+MAX_BUF_LEN-2, prefix, 1);
+    *((int *)buf) = id;
+    *((int *)buf+1) = seq_nums[port-PORT];
+    memcpy(buf+HEADER_SIZE, message, MAX_BUF_LEN-HEADER_SIZE);
     struct addrinfo *p;
     int talkfd = set_up_talk(destination, port, &p);
+    int ack_val = 0;
 
     printf("sending to: %d .... ", port-PORT);
     fflush(stdout);
@@ -112,9 +122,9 @@ int unicast_send(char * destination, int port, char * message){
     if(talkfd != -1){
         do{
             udp_send(talkfd, buf, p);
-        } while(wait_for_ack());
+        } while((ack_val = wait_for_ack()) == -1);
         
-        printf("received ack\n");
+        printf("received ack %d\n", ack_val);
 
         freeaddrinfo(p);
         close(talkfd);
@@ -128,27 +138,36 @@ int unicast_send(char * destination, int port, char * message){
 
 int unicast_receive(char * message){
     int random_drop  = rand() % 101;  //[0, 100]
-    int random_delay = rand() % (2 * r_i->delay_time);  //[0, 2*delay_time-1]
+    int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
     int bytes = udp_listen(r_i->listenfd, message);
-  
+    int sender  = *((int *)message);
+    int seq_num = *((int *)message+1);
+
+    printf("received from: %d seq_num: %d \n", sender, seq_num);
+
     //drop
-    if(random_drop <= r_i->drop_rate){
+    if(r_i->drop_rate > 0 && random_drop <= r_i->drop_rate){
         printf("dropping packet\n");
         return 0;
     }
 
     //delay
-    printf("delaying: %d ms\n", random_delay);
-    usleep(random_delay*1000);
+    if(random_delay > 0){
+        usleep(random_delay*1000);
+        printf("delaying: %d ms\n", random_delay);
+    }
 
     if(bytes > 0){
-        char source_num[2];
-        memcpy(source_num, message+(MAX_BUF_LEN-2), 1);  //grab sender's id
-        source_num[1] = '\0';
-        send_ack(atoi(source_num));
+        send_ack(sender, seq_num+1);
+        if(seq_num < seq_nums[sender]){
+            printf("retransmission\n");
+            return 0;
+        }
+        seq_nums[sender] = seq_num+1;
+        memmove(message, message+HEADER_SIZE, MAX_BUF_LEN-HEADER_SIZE); //remove buffer
     }
-    message[MAX_BUF_LEN - 2] = ' ';  //remove sender's id
-    return bytes;
+  
+    return bytes-HEADER_SIZE;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -184,16 +203,16 @@ int start_broadcast_thread(char * message){
 
 int r_multicast(char * message){
     strncpy(message, prefix, 3);
-    add_to_seen(message);
+    //add_to_seen(message);
     return b_multicast(message);
 }
 
 int r_deliver(char * message){
     int num_bytes = unicast_receive(message);
-    if(num_bytes > 0 && !previously_seen(message)){
+    if(num_bytes > 0){ // && !previously_seen(message)){
         //printf("broadcasting\n");
-        start_broadcast_thread(message);
-        add_to_seen(message);
+        //start_broadcast_thread(message);
+        //add_to_seen(message);
         return num_bytes;
     }
     else if(num_bytes > 0){
