@@ -75,16 +75,13 @@ int wait_for_ack(int expected_sender){
     while(count++ < 10000000){
         if(udp_listen(r_i->ackfd, reply) > 0){
             int random_drop  = rand() % 101;  //[0, 100]
-            int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
 
             //drop
             if(r_i->drop_rate > 0 && random_drop <= r_i->drop_rate){
                 printf("dropping ack and resending, ");
+                fflush(stdout);
                 return -1;
             }
-
-            //delay
-            if(random_delay > 0) usleep(random_delay*1000);
 
             int sender = *((int *)reply);
             int seq_num = atoi(reply+HEADER_SIZE);
@@ -102,12 +99,14 @@ int send_ack(int dest_id, int seq_num){
     struct addrinfo *p;
     int talkfd = set_up_talk(addresses+(dest_id*16), ACK_PORT+dest_id, &p);
     char ack_message[4 + HEADER_SIZE];
+    int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
 
     //printf("send ack to: %d\n", dest_id);
 
     if(talkfd != -1){
         *((int *)ack_message) = id;
         sprintf(ack_message+HEADER_SIZE, "%d", seq_num);
+        if(random_delay > 0) usleep(random_delay*1000); //delay
         udp_send(talkfd, ack_message, p);
         freeaddrinfo(p);
         close(talkfd);
@@ -134,10 +133,18 @@ int unicast_send(char * destination, int port, char * message){
 
     if(talkfd != -1){
         do{
+            //delay
+            int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
+            if(random_delay > 0){
+                usleep(random_delay*1000);
+                printf("delaying %d ms, ", random_delay);
+                fflush(stdout);
+            }
             udp_send(talkfd, buf, p);
         } while((ack_val = wait_for_ack(port-PORT)) == -1);
         
         printf("received ack %d\n", ack_val);
+        fflush(stdout);
 
         freeaddrinfo(p);
         close(talkfd);
@@ -151,7 +158,6 @@ int unicast_send(char * destination, int port, char * message){
 
 int unicast_receive(char * message){
     int random_drop  = rand() % 101;  //[0, 100]
-    int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
     int bytes = udp_listen(r_i->listenfd, message);
     int sender  = *((int *)message);
     int seq_num = *((int *)message+1);
@@ -164,12 +170,6 @@ int unicast_receive(char * message){
         return 0;
     }
 
-    //delay
-    if(random_delay > 0){
-        usleep(random_delay*1000);
-        printf("delaying: %d ms\n", random_delay);
-    }
-
     if(bytes > 0){
         send_ack(sender, seq_num+1);
         if(seq_num < seq_nums[sender]){
@@ -179,7 +179,8 @@ int unicast_receive(char * message){
         seq_nums[sender] = seq_num+1;
         memmove(message, message+HEADER_SIZE, MAX_BUF_LEN-HEADER_SIZE); //remove buffer
     }
-  
+ 
+    fflush(stdout);
     return bytes-HEADER_SIZE;
 }
 

@@ -26,7 +26,7 @@ To Do
 ======
 - Reliable causal ordering
 - Reliable total ordering
-- Clean up, printf better, use verbose flag throughout
+- Clean up, thorough test, printf better, use verbose flag throughout
 
 Change Log
 ==========
@@ -45,4 +45,5 @@ Change Log
 - 3/17 - Added sequence numbers for every message
 - 3/17 - Full use of sequence numbers.  Finally complete reliable unicast with dropping/delaying ACKs.
 - 3/17 - Unfortunately removed unnecessary reliable multicast. Tested and works well with 2, 4, 6 processes.  Just ordering gurantees left to do.
+- 3/18 - Fixed delay bug.  Now delaying in send.  Multicasts are delivered in random order according to delays as expected.
 
