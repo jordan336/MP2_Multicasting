@@ -24,16 +24,9 @@ format:
 
 To Do
 ======
-- Put in ACK drops and timeout handling with sequence numbers
-- Completely remove reliable multicast probably, its not unnecessary with full reliable unicast
 - Reliable causal ordering
 - Reliable total ordering
-
-Known bugs
-==========
-- If delay rates too high, timeout is too fast.  Without sequence numbers, everything gets messed up.
-- If same message typed twice, will only be sent once because it appears as an already seen message in reliable multicast.  Reliable multicast specifically looks for previously seen messages to terminate broadcasts.
-
+- Clean up, printf better, use verbose flag throughout
 
 Change Log
 ==========
@@ -50,4 +43,6 @@ Change Log
 - 3/15 - Reliable unicast with ACKs working.  Reliable multicast using ACKs working.
 - 3/16 - Random delay and drop working
 - 3/17 - Added sequence numbers for every message
+- 3/17 - Full use of sequence numbers.  Finally complete reliable unicast with dropping/delaying ACKs.
+- 3/17 - Unfortunately removed unnecessary reliable multicast. Tested and works well with 2, 4, 6 processes.  Just ordering gurantees left to do.
 

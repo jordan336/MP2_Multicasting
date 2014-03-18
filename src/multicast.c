@@ -68,19 +68,32 @@ int add_to_seen(char * message){
 //////////////////////////////////////////////////////////////////////////////////
 //ACKs
 
-int wait_for_ack(){
+int wait_for_ack(int expected_sender){
     int count = 0;
     char reply[MAX_BUF_LEN];
 
     while(count++ < 10000000){
         if(udp_listen(r_i->ackfd, reply) > 0){
+            int random_drop  = rand() % 101;  //[0, 100]
+            int random_delay = (r_i->delay_time == 0 ? 0 : rand() % (2 * r_i->delay_time));  //[0, 2*delay_time-1]
+
+            //drop
+            if(r_i->drop_rate > 0 && random_drop <= r_i->drop_rate){
+                printf("dropping ack and resending, ");
+                return -1;
+            }
+
+            //delay
+            if(random_delay > 0) usleep(random_delay*1000);
+
             int sender = *((int *)reply);
             int seq_num = atoi(reply+HEADER_SIZE);
-            if(seq_num > seq_nums[sender]) seq_nums[sender] = seq_num;
-            return seq_num; //got ack
+            if(sender != expected_sender) return -1;  //ignore old ACKs from previous connections
+            if(seq_num > seq_nums[sender]) seq_nums[sender] = seq_num;  //ignore old ACKs from current connection
+            return seq_num; //got current ack
         }
     }
-    printf("timeout ");
+    printf("timeout, ");
     fflush(stdout);
     return -1;  //resend
 }
@@ -122,7 +135,7 @@ int unicast_send(char * destination, int port, char * message){
     if(talkfd != -1){
         do{
             udp_send(talkfd, buf, p);
-        } while((ack_val = wait_for_ack()) == -1);
+        } while((ack_val = wait_for_ack(port-PORT)) == -1);
         
         printf("received ack %d\n", ack_val);
 
@@ -208,17 +221,18 @@ int r_multicast(char * message){
 }
 
 int r_deliver(char * message){
-    int num_bytes = unicast_receive(message);
-    if(num_bytes > 0){ // && !previously_seen(message)){
-        //printf("broadcasting\n");
-        //start_broadcast_thread(message);
-        //add_to_seen(message);
+    return unicast_receive(message);
+    /* int num_bytes = unicast_receive(message);
+    if(num_bytes > 0 && !previously_seen(message)){
+        printf("broadcasting\n");
+        start_broadcast_thread(message);
+        add_to_seen(message);
         return num_bytes;
     }
     else if(num_bytes > 0){
-        //printf("previously seen\n");
+        printf("previously seen\n");
     }
-    return 0;
+    return 0; */
 }
 
 //////////////////////////////////////////////////////////////////////////////////
