@@ -8,6 +8,7 @@
 
 #define PORT 15457
 #define ACK_PORT 25457
+#define S_PORT 5555
 #define STORAGE 40
 #define MAX_BUF_LEN 1000
 #define HEADER_SIZE 2 * sizeof(int)
@@ -16,4 +17,9 @@ int init_multicast(char * new_addrs, struct read_info * new_r_i, int new_id, int
 int close_multicast();
 int r_multicast(char * message);
 int r_deliver(char * message);
+
+int get_sequencer();
+int s_request();
+void s_send(int s, int sendTo);
+
 

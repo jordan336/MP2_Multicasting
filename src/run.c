@@ -20,6 +20,13 @@
 
 
 void pthread_setup(struct read_info * r_i, char * addrs, int id, int num_processes){
+	//Leader Process 0
+	if (id == 0){
+		if (pthread_create(&sequencer_thread, NULL, &sequencer, NULL)){
+			printf("%d> Sequencer Thread error\n", id);		
+		}
+	}
+
     init_multicast(addrs, r_i, id, num_processes);
 	if (pthread_create(&read_thread, NULL, &read_messages, NULL)){
 		printf("%d> Read Thread error\n", id);
@@ -41,18 +48,20 @@ void print_status(char * addresses, int num_processes){
     printf("\n---------------------------------\n");
 }
 
-struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd, int ackfd){
+struct read_info * set_up_read_info(int delay_time, int drop_rate, int listenfd, int ackfd, int sfd){
     struct read_info * r_i = (struct read_info *)malloc(sizeof(struct read_info));
     r_i -> delay_time = delay_time;
     r_i -> drop_rate  = drop_rate;
     r_i -> listenfd   = listenfd;
     r_i -> ackfd      = ackfd;
+	r_i -> sfd        = sfd;
     return r_i;
 }
 
-int teardown(struct read_info * r_i, char * addresses, int listenfd, int ackfd){
+int teardown(struct read_info * r_i, char * addresses, int listenfd, int ackfd, int sfd){
     close(listenfd);
     close(ackfd);
+	close(sfd);
     free(r_i);
     free(addresses);
     close_multicast();
@@ -61,7 +70,7 @@ int teardown(struct read_info * r_i, char * addresses, int listenfd, int ackfd){
 
 int main (int argc, const char* argv[]){
  
-    int ackfd, listenfd, delay_time, drop_rate, id, num_processes;
+    int sfd, ackfd, listenfd, delay_time, drop_rate, id, num_processes;
     char * addresses;
     
     if(argc != 5){
@@ -93,9 +102,10 @@ int main (int argc, const char* argv[]){
 
     listenfd = set_up_listen(PORT+id, 0);
     ackfd    = set_up_listen(ACK_PORT+id, 1);
-    struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd, ackfd);
+	sfd      = set_up_listen(S_PORT+id, 0);
+    struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd, ackfd, sfd);
     pthread_setup(r_i, addresses, id, num_processes);
-    teardown(r_i, addresses, listenfd, ackfd); 
+    teardown(r_i, addresses, listenfd, ackfd, sfd); 
     return 0;
 }
 

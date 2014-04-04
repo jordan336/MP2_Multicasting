@@ -5,8 +5,9 @@
 #include <pthread.h>
 #include "multicast.h"
 
-pthread_t read_thread, write_thread;
+pthread_t read_thread, write_thread, sequencer_thread;
 
 void * write_messages();
 void * read_messages();
+void * sequencer();
 

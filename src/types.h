@@ -5,6 +5,7 @@ struct read_info {
     int drop_rate;
     int listenfd;
     int ackfd;
+	int sfd;
 };
 
 
