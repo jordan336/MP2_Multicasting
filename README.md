@@ -24,9 +24,7 @@ format:
 
 To Do
 ======
-- Reliable causal ordering
-- Reliable total ordering
-- Clean up, thorough test, printf better, use verbose flag throughout
+- Clean up
 
 Change Log
 ==========
