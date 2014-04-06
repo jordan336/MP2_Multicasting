@@ -97,12 +97,14 @@ int main (int argc, const char* argv[]){
 
     if(VERBOSE) print_status(addresses, num_processes);
 
-    listenfd = set_up_listen(PORT+id, 0);
-    ackfd    = set_up_listen(ACK_PORT+id, 1);
-	sfd      = set_up_listen(S_PORT+id, 0);
+    listenfd = set_up_listen(PORT+id, 0);		//socket for recieving messages
+    ackfd    = set_up_listen(ACK_PORT+id, 1);	//socket for acks
+	sfd      = set_up_listen(S_PORT+id, 0);		//special socket for proccess 0 sequencer/vector
+
     struct read_info * r_i = set_up_read_info(delay_time, drop_rate, listenfd, ackfd, sfd);
     pthread_setup(r_i, addresses, id, num_processes);
     teardown(r_i, addresses, listenfd, ackfd, sfd); 
+
     return 0;
 }
 

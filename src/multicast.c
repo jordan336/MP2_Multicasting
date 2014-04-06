@@ -18,13 +18,12 @@ int s_listen;
 //Utilities
 
 void lock(){
-    pthread_mutex_lock(&seen_mutex);
+	pthread_mutex_lock(&seen_mutex);
 }
 
 void unlock(){
-    pthread_mutex_unlock(&seen_mutex);
+	pthread_mutex_unlock(&seen_mutex);
 }
-
 
 int init_multicast(char * new_addrs, struct read_info * new_r_i, int new_id, int new_num_processes){
     addresses = new_addrs;
@@ -33,7 +32,7 @@ int init_multicast(char * new_addrs, struct read_info * new_r_i, int new_id, int
     num_processes = new_num_processes;
     num_seen = 0;
     sprintf(prefix, "%d> ", new_id);
-    seen = (char *)malloc(STORAGE * MAX_BUF_LEN * sizeof(char));  //set up array of previously seen messages
+    seen = (char *)malloc(STORAGE * MAX_BUF_LEN * sizeof(char));  //set up array for buffered messages
     memset(seen, 0, STORAGE * MAX_BUF_LEN * sizeof(char));
     seq_nums = (int *)malloc(num_processes * sizeof(int));
 	sequence = 0;
@@ -48,26 +47,6 @@ int init_multicast(char * new_addrs, struct read_info * new_r_i, int new_id, int
 int close_multicast(){
     free(seen);
 	close(s_listen);
-    return 1;
-}
-
-int previously_seen(char * message){
-    lock();
-    int i;
-    for(i=0; i<num_seen; i++){
-        if(strcmp(message, seen+(i*MAX_BUF_LEN*sizeof(char))) == 0){
-            unlock();
-            return 1;
-        }
-    }
-    unlock();
-    return 0;
-}
-
-int add_to_seen(char * message){
-    lock();
-    strncpy(seen+(num_seen*MAX_BUF_LEN), message, MAX_BUF_LEN);
-    unlock();
     return 1;
 }
 
@@ -208,15 +187,7 @@ int unicast_receive(char * message){
 
     if(bytes > 0){
         send_ack(sender, seq_num[sender]+1);
-        //if(seq_num < seq_nums[sender]){
-           // printf("retransmission\n");
-           // return 0;
-        //}
-		//Put message in the queue
 		add_to_buffer(message);
-        //seq_nums[sender] = seq_num+1;
-		//printf("%s", message+HEADER_SIZE);
-        //memmove(message, message+HEADER_SIZE, MAX_BUF_LEN-HEADER_SIZE); //remove buffer
     }
 
 	//Loop through queue and print messages that can be printed
@@ -299,7 +270,6 @@ int b_multicast(char * message){
 		sequence = s;
 	}
 	else{
-		//while ( s != sequence_c[id]+1){}
 		sequence_c[id] = s;
 	}
 
@@ -308,22 +278,6 @@ int b_multicast(char * message){
         unicast_send(addresses+(i*16), PORT+i, message, s);
     }
     return 1;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-//Broadcast thread 
-
-void * broadcast_message(void * param){
-    b_multicast((char *)param);
-    return 0;
-}
-
-int start_broadcast_thread(char * message){
-    if (pthread_create(&broadcast_thread, NULL, &broadcast_message, message)){
-		printf("%d> Broadcast Thread error\n", id);
-	}
-	//pthread_join(broadcast_thread, NULL);
-    return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -371,23 +325,11 @@ void s_send(int s, int sendTo){
 
 int r_multicast(char * message){
     strncpy(message, prefix, 3);
-    //add_to_seen(message);
     return b_multicast(message);
 }
 
 int r_deliver(char * message){
     return unicast_receive(message);
-    /* int num_bytes = unicast_receive(message);
-    if(num_bytes > 0 && !previously_seen(message)){
-        printf("broadcasting\n");
-        start_broadcast_thread(message);
-        add_to_seen(message);
-        return num_bytes;
-    }
-    else if(num_bytes > 0){
-        printf("previously seen\n");
-    }
-    return 0; */
 }
 
 //////////////////////////////////////////////////////////////////////////////////

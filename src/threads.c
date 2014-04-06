@@ -1,5 +1,5 @@
 //Threads.c
-//Code executed by read and write threads
+//Code executed by read and write threads and sequencer
 
 #include "threads.h"
 
@@ -28,13 +28,9 @@ void * read_messages(){
     char * buf = (char *)malloc(MAX_BUF_LEN * sizeof(char));
 
     while(1){
-        int num_bytes = r_deliver(buf); 
-        if(num_bytes > 0){
-            //printf("%s\n", buf);
-        }
+        r_deliver(buf); 
     }
 
-    //free(buf);  //---TO DO: find out why the f**k this segfaults  -edit: i think you cant free from pthread
     return 0;
 }
 
@@ -42,7 +38,7 @@ void * read_messages(){
 void * sequencer(){
 
 	int s = 1;
-	int s_c[] = {1,1,1,1,1,1};
+	int s_c[] = {1,1,1,1,1,1}; //vector timestamps for causal
 	int sendTo, index;
 
 	while(1){
@@ -56,7 +52,7 @@ void * sequencer(){
 				index = 0;
 			else
 				index = sendTo;
-			printf("%d\n",s_c[index]);
+			//printf("%d\n",s_c[index]);
 			s_send(s_c[index],sendTo);
 			s_c[index]++;
 		}
