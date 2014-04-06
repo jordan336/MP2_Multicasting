@@ -16,9 +16,6 @@
 #include "threads.h"
 #include "file_io.h"
 
-#define VERBOSE 1
-
-
 void pthread_setup(struct read_info * r_i, char * addrs, int id, int num_processes){
 	//Leader Process 0
 	if (id == 0){

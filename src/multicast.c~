@@ -250,9 +250,9 @@ int unicast_receive(char * message){
 			else{
 				for(j=0; j<6; j++){
 					seq_c[j] = *((int *)m+j+1);
-					//printf("%d",seq_c[j]);
+					printf("%d",seq_c[j]);
 				}
-				//printf("\n");
+				printf("\n");
 				int printable = 1;
 				for(j=0; j<6; j++){
 					if (j == from){

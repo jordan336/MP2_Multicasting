@@ -42,12 +42,24 @@ void * read_messages(){
 void * sequencer(){
 
 	int s = 1;
-	int sendTo;
+	int s_c[] = {1,1,1,1,1,1};
+	int sendTo, index;
 
 	while(1){
 		sendTo = s_request();
-		s_send(s, sendTo);
-		s++;
+		if (ORDERING == TOTAL){
+			s_send(s, sendTo);
+			s++;
+		}
+		else if (ORDERING == CAUSAL){
+			if (sendTo == -1)
+				index = 0;
+			else
+				index = sendTo;
+			printf("%d\n",s_c[index]);
+			s_send(s_c[index],sendTo);
+			s_c[index]++;
+		}
 	}
 
 	return 0;
