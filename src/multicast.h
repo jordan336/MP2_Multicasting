@@ -16,7 +16,7 @@
 #define VERBOSE 0
 
 // 0 for total ordering, 1 for causal ordering
-#define ORDERING 1
+#define ORDERING 0
 #define TOTAL 0
 #define CAUSAL 1
 
