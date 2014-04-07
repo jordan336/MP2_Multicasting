@@ -13,6 +13,10 @@ Usage
 - delay time in milliseconds, must be positive
 - drop_rate must be [0, 100]
 - must have all ids present in chatroom or infinite timeouts...
+- VERBOSE (defined in multicast.h) is a flag to display extra output
+- ORDERING (defined in multicast.h) is a flag to determine the type of ordering used
+    - 0 Total ordering
+    - 1 Causal ordering
 
 Config File
 ===========
